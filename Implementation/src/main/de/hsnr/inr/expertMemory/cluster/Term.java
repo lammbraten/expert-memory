@@ -3,7 +3,27 @@ package de.hsnr.inr.expertMemory.cluster;
 public class Term {
 
 	private String value;
-	private int frequency;
+	private int frequency = 0;
 	
+	public Term(String value){
+		this.value = value;
+	}
 	
+	@Override
+	public String toString(){
+		return value + ": " + frequency;
+	}
+	
+	@Override
+	public boolean equals(Object o){	
+		if(o instanceof Term)
+			return ((Term) o).value.equals(this.value);
+		
+		return false;
+	}
+	
+	@Override 
+	public int hashCode(){
+		return value.hashCode();
+	}
 }
