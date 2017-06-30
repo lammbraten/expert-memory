@@ -3,6 +3,7 @@ package de.hsnr.inr.expertMemory.cluster;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 public class ClusterIndex extends HashSet<Term>{
@@ -16,30 +17,54 @@ public class ClusterIndex extends HashSet<Term>{
 		this.clusters = new HashSet<Cluster>();
 		this.documents = new HashSet<Document>();
 		
+		readCorpus(corpus);
+		
+		for(Cluster c : clusters)
+			System.out.println("Cluster " + c + " in clusters");
+
+	}
+
+
+	private Set<Integer> pickRandomClusterLeader(int size){
+		double sqrt_n = Math.sqrt(size);
+		HashSet<Integer> indices = new HashSet<Integer>();
+		Random rand = new Random();
+		for(int i = 0; i < sqrt_n; i++){
+			boolean added = false;
+			do{
+				added = indices.add(rand.nextInt(size));
+			} while(!added);
+			
+		}
+		return indices;
+	}
+
+	private void readCorpus(File corpus) {
+		Set<Integer> clusterLeaderIndices = pickRandomClusterLeader(corpus.listFiles().length);
+		int i = 0;
+		
 		for(File f : corpus.listFiles()){
+			Document doc = null;
 			try {
-				addAll(extractTerms(f));
+				doc = extractTerms(f);
 			} catch (IOException e) {
 				System.err.println("Couldn't open file " + f + "\n" + e);
 			}
+			if(doc != null){
+				addAll(doc);
+				if(clusterLeaderIndices.contains(i)) //new ClusterLeader
+					clusters.add(new Cluster(doc));
+			}
+			i++;
 		}
-
-		//for(Term t : this)
-		//	System.out.println(t);
-		
-		for(Cluster c : clusters)
-			System.out.println("Cluster " + c + "in clusters");
-
 	}
 	
-
-
 	public void addAll(Set<Term> terms){
 		for(Term t : terms)
 			add(t);
 	}
 	
-	private Set<Term> extractTerms(File f) throws IOException{
+	private Document extractTerms(File f) throws IOException{
 		Document doc = new Document(f.getName());
 		
 		for(String termStr : Tokenizer.tokenize(f))
