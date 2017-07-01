@@ -21,7 +21,47 @@ public class ClusterIndex extends HashSet<Term>{
 		
 		for(Cluster c : clusters)
 			System.out.println("Cluster " + c + " in clusters");
+		
+		buildCluster();
 
+	}
+
+
+	private void buildCluster() {
+		for(Document doc : documents){
+			assignToNearestClusterLeader(doc);
+		}
+	}
+
+
+	private void assignToNearestClusterLeader(Document doc) {
+		Cluster nearestCluster = null;
+		double minDistance = Double.MAX_VALUE;
+		double actDistance;
+		
+		for(Cluster c : clusters){
+			actDistance = cosineScore(c.getClusterLeader(), doc);
+			if(actDistance < minDistance){
+				minDistance = actDistance;
+				nearestCluster = c;
+			}
+		}
+		if(nearestCluster == null)
+			throw new NullPointerException("No Clusters?");
+		
+		nearestCluster.add(doc);
+	}
+
+//	private float calcW_td(Term t, Document d){
+//		return (float) (1+ Math.log10(t.getTf_td(d)) * (Math.log((float)getNumberOfDocs()/t.getDf_t())));
+//	}
+	
+	private double cosineScore(Document clusterLeader, Document doc) {
+		
+		for(Term t : doc)
+			break;
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 

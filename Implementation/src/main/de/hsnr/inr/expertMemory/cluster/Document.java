@@ -2,6 +2,11 @@ package de.hsnr.inr.expertMemory.cluster;
 
 import java.util.HashSet;
 
+/**
+ * Change this in HashMap?
+ * @author lammbraten
+ *
+ */
 public class Document extends HashSet<Term>{
 	
 	private static final long serialVersionUID = 2340542788407482238L;
