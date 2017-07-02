@@ -3,7 +3,7 @@ package de.hsnr.inr.expertMemory.cluster;
 public class Term {
 
 	private String value;
-	private int frequency = 0;
+
 	
 	public Term(String value){
 		this.value = value;
@@ -11,7 +11,7 @@ public class Term {
 	
 	@Override
 	public String toString(){
-		return value + ": " + frequency;
+		return value;
 	}
 	
 	@Override

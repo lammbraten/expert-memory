@@ -2,7 +2,11 @@ package de.hsnr.inr.expertMemory.cluster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Set;
 
@@ -29,39 +33,88 @@ public class ClusterIndex extends HashSet<Term>{
 
 	private void buildCluster() {
 		for(Document doc : documents){
-			assignToNearestClusterLeader(doc);
+			assignToNearestClusterLeaders(doc);
 		}
 	}
 
 
-	private void assignToNearestClusterLeader(Document doc) {
-		Cluster nearestCluster = null;
-		double minDistance = Double.MAX_VALUE;
-		double actDistance;
-		
+	private void assignToNearestClusterLeaders(Document doc) {
+		Set<Cluster> nearestClusters = new HashSet<Cluster>();
+
+		nearestClusters.addAll(cosineScore(doc, 1));
 		for(Cluster c : clusters){
-			actDistance = cosineScore(c.getClusterLeader(), doc);
-			if(actDistance < minDistance){
-				minDistance = actDistance;
-				nearestCluster = c;
+			if(nearestClusters.contains(c)){
+				System.out.println("Nearest-Cluster for " + doc + ": " + c);
+				c.add(doc);				
 			}
 		}
-		if(nearestCluster == null)
-			throw new NullPointerException("No Clusters?");
-		
-		nearestCluster.add(doc);
 	}
 
-//	private float calcW_td(Term t, Document d){
-//		return (float) (1+ Math.log10(t.getTf_td(d)) * (Math.log((float)getNumberOfDocs()/t.getDf_t())));
-//	}
+	/**
+	 * Only for Cluster-Leaders!
+	 * @param t
+	 * @param d
+	 * @return
+	 */
+	private float calcW_td(Term t, Document d){
+		return (float) (1+ Math.log10(d.count(t)) * (Math.log((float)clusters.size()/getDf_t(t))));
+	}
 	
-	private double cosineScore(Document clusterLeader, Document doc) {
+	/**
+	 * Only for Cluster Leaders!
+	 * @param t
+	 * @return
+	 */
+	private int getDf_t(Term t) {
+		int df_t = 0;
+		for(Cluster c : clusters)
+			df_t += c.getClusterLeader().count(t);
+		return df_t;
+	}
+	
+	/**
+	 * TODO: This can be precalculated once.
+	 * @param t
+	 * @return
+	 */
+	private List<Cluster> getClusterPostingList(Term t){
+		LinkedList<Cluster> postings = new LinkedList<Cluster>();
 		
-		for(Term t : doc)
-			break;
-		// TODO Auto-generated method stub
-		return 0;
+		for(Cluster c : clusters)
+			if(c.getClusterLeader().contains(t))
+				postings.add(c);
+		
+		return postings;
+	}
+
+
+	private List<Cluster> cosineScore(/*Document clusterLeader, */ Document q, int k) {
+		HashMap<Cluster, Float> scores = new HashMap<Cluster, Float>();
+		LinkedList<Cluster> returnVal = new LinkedList<Cluster>();
+		PriorityQueue<WeightedCluster> pq = new PriorityQueue<WeightedCluster> (new WeightedClusterComparator());
+		
+		for(Cluster c : clusters)
+			scores.put(c, 0f);
+		
+		for(Term t : q){
+			float w_tq = calcW_td(t, q);
+			
+			for(Cluster d : getClusterPostingList(t)){
+				float w_td = calcW_td(t, d.getClusterLeader());
+				float n_val = scores.get(d) + (w_tq * w_td);
+				scores.put(d, n_val);
+			}	
+		}
+		
+		for(Cluster c : scores.keySet()){
+			//scores.put(c,((float) scores.get(c)/ c.getClusterLeader().length()));
+			pq.add(new WeightedCluster(c, ((float) scores.get(c)/ c.getClusterLeader().length())));
+		}
+
+		for(int i = 0; i < k; i++)
+			returnVal.add(pq.poll());
+		
+		return returnVal;
 	}
 
 

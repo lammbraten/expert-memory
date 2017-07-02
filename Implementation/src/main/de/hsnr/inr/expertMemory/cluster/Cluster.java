@@ -12,6 +12,11 @@ public class Cluster extends HashSet<Document> {
 		setClusterLeader(doc);
 	}
 	
+	public Cluster(Cluster c) {
+		this.addAll(c);
+		this.setClusterLeader(c.getClusterLeader());
+	}
+
 	@Override
 	public String toString(){
 		return clusterLeader.getName() + "(size): " + this.size();
