@@ -23,11 +23,12 @@ public class ClusterIndex extends HashSet<Term>{
 		
 		readCorpus(corpus);
 		
+
+		buildCluster();
+		
 		for(Cluster c : clusters)
 			System.out.println("Cluster " + c + " in clusters");
 		
-		buildCluster();
-
 	}
 
 
@@ -44,7 +45,7 @@ public class ClusterIndex extends HashSet<Term>{
 		nearestClusters.addAll(cosineScore(doc, 1));
 		for(Cluster c : clusters){
 			if(nearestClusters.contains(c)){
-				System.out.println("Nearest-Cluster for " + doc + ": " + c);
+				//System.out.println("Nearest-Cluster for " + doc + ": " + c);
 				c.add(doc);				
 			}
 		}
@@ -57,7 +58,7 @@ public class ClusterIndex extends HashSet<Term>{
 	 * @return
 	 */
 	private float calcW_td(Term t, Document d){
-		return (float) (1+ Math.log10(d.count(t)) * (Math.log((float)clusters.size()/getDf_t(t))));
+		return (float) (1+ Math.log10(d.count(t)) * (Math.log((float)clusters.size()/(getDf_t(t)+1))));
 	}
 	
 	/**
@@ -68,7 +69,8 @@ public class ClusterIndex extends HashSet<Term>{
 	private int getDf_t(Term t) {
 		int df_t = 0;
 		for(Cluster c : clusters)
-			df_t += c.getClusterLeader().count(t);
+			if(c.contains(t))
+				df_t++;
 		return df_t;
 	}
 	
@@ -88,7 +90,7 @@ public class ClusterIndex extends HashSet<Term>{
 	}
 
 
-	private List<Cluster> cosineScore(/*Document clusterLeader, */ Document q, int k) {
+	private List<Cluster> cosineScore(Document q, int k) {
 		HashMap<Cluster, Float> scores = new HashMap<Cluster, Float>();
 		LinkedList<Cluster> returnVal = new LinkedList<Cluster>();
 		PriorityQueue<WeightedCluster> pq = new PriorityQueue<WeightedCluster> (new WeightedClusterComparator());
@@ -108,6 +110,9 @@ public class ClusterIndex extends HashSet<Term>{
 		
 		for(Cluster c : scores.keySet()){
 			//scores.put(c,((float) scores.get(c)/ c.getClusterLeader().length()));
+			if(scores.get(c) <= 0)
+				continue;
+			float val = ((float) scores.get(c)/ c.getClusterLeader().length());
 			pq.add(new WeightedCluster(c, ((float) scores.get(c)/ c.getClusterLeader().length())));
 		}
 
@@ -158,9 +163,10 @@ public class ClusterIndex extends HashSet<Term>{
 	}
 	
 	private Document extractTerms(File f) throws IOException{
-		Document doc = new Document(f.getName());
+		List<String> tokens = Tokenizer.tokenize(f);
+		Document doc = new Document(f.getName(), tokens.size());
 		
-		for(String termStr : Tokenizer.tokenize(f))
+		for(String termStr : tokens)
 			doc.add(new Term(termStr));
 
 		documents.add(doc);

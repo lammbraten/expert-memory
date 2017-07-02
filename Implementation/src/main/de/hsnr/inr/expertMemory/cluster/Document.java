@@ -16,10 +16,13 @@ public class Document implements Iterable<Term>, Multiset<Term> {
 	
 	private HashMultiset<Term> terms;
 	private String name;
+	private int length;
 
-	public Document(String name){
+
+	public Document(String name, int length) {
 		this.setName(name);
 		terms = HashMultiset.create();
+		this.length = length;
 	}
 
 	public String getName() {
@@ -89,10 +92,6 @@ public class Document implements Iterable<Term>, Multiset<Term> {
 	 * @return
 	 */
 	public int length(){
-		int length = 0;
-		for(Term t : this)
-			length += count(t);
-		
 		return length;
 	}
 
