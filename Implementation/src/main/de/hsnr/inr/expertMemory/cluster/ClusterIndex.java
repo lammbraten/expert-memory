@@ -13,6 +13,7 @@ import java.util.Set;
 public class ClusterIndex extends HashSet<Term>{
 	
 	private static final long serialVersionUID = -196938510438540540L;
+	private HashMap<Term, Integer> dft; 
 	private HashSet<Cluster> clusters;
 	private HashSet<Document> documents;
 	
@@ -20,6 +21,7 @@ public class ClusterIndex extends HashSet<Term>{
 	public ClusterIndex(File corpus) {
 		this.clusters = new HashSet<Cluster>();
 		this.documents = new HashSet<Document>();
+		this.dft = new HashMap<Term, Integer>();
 		
 		readCorpus(corpus);
 		
@@ -27,12 +29,13 @@ public class ClusterIndex extends HashSet<Term>{
 		buildCluster();
 		
 		for(Cluster c : clusters)
-			System.out.println("Cluster " + c + " in clusters");
+			System.out.println("Cluster " + c);
 		
 	}
 
 
 	private void buildCluster() {
+		calcDf_t();
 		for(Document doc : documents){
 			assignToNearestClusterLeaders(doc);
 		}
@@ -58,18 +61,25 @@ public class ClusterIndex extends HashSet<Term>{
 	 * @return
 	 */
 	private float calcW_td(Term t, Document d){
-		return (float) (1+ Math.log10(d.count(t)) * (Math.log((float)clusters.size()/(getDf_t(t)+1))));
+		float df_td = getDf_t(t);
+		//if(df_td > 0)
+			return (float) ((float) (1+ Math.log10(d.count(t))) * Math.log((float)documents.size()/df_td));
+	//	return (float) (1+ Math.log10(d.count(t)));
 	}
 	
-	/**
-	 * Only for Cluster Leaders!
-	 * @param t
-	 * @return
-	 */
 	private int getDf_t(Term t) {
+		return dft.get(t);
+	}
+
+	private void calcDf_t(){
+		for(Term t : this)
+			dft.put(t, calcDf_t(t));
+	}
+	
+	private int calcDf_t(Term t) {
 		int df_t = 0;
-		for(Cluster c : clusters)
-			if(c.contains(t))
+		for(Document d : documents)
+			if(d.contains(t))
 				df_t++;
 		return df_t;
 	}
@@ -112,7 +122,10 @@ public class ClusterIndex extends HashSet<Term>{
 			//scores.put(c,((float) scores.get(c)/ c.getClusterLeader().length()));
 			if(scores.get(c) <= 0)
 				continue;
-			float val = ((float) scores.get(c)/ c.getClusterLeader().length());
+			//float d = scores.get(c);
+			//float l =  c.getClusterLeader().length();
+			//float val = ((float) scores.get(c)/ c.getClusterLeader().length());
+			//System.out.println("d/l = " + d +"/" + l +"=" +val);
 			pq.add(new WeightedCluster(c, ((float) scores.get(c)/ c.getClusterLeader().length())));
 		}
 
@@ -126,7 +139,7 @@ public class ClusterIndex extends HashSet<Term>{
 	private Set<Integer> pickRandomClusterLeader(int size){
 		double sqrt_n = Math.sqrt(size);
 		HashSet<Integer> indices = new HashSet<Integer>();
-		Random rand = new Random();
+		Random rand = new Random(1); //Temporary seeded for bug finding
 		for(int i = 0; i < sqrt_n; i++){
 			boolean added = false;
 			do{
