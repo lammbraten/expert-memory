@@ -14,19 +14,25 @@ public class ClusterIndex extends HashSet<Term>{
 	
 	private static final long serialVersionUID = -196938510438540540L;
 	private HashMap<Term, Integer> dft; 
+	private HashMap<Term, Set<Cluster>> cluster_postings; 
 	private HashSet<Cluster> clusters;
 	private HashSet<Document> documents;
 	
 	
 	public ClusterIndex(File corpus) {
+		long startTime = System.currentTimeMillis();
+
 		this.clusters = new HashSet<Cluster>();
 		this.documents = new HashSet<Document>();
 		this.dft = new HashMap<Term, Integer>();
-		
+		this.cluster_postings = new HashMap<Term, Set<Cluster>>();
+		System.out.println("read corpus... " + (System.currentTimeMillis() - startTime));
 		readCorpus(corpus);
 		
-
+		System.out.println("build cluster... " + (System.currentTimeMillis() - startTime));
 		buildCluster();
+		
+		System.out.println("cluster finished! " + (System.currentTimeMillis() - startTime));
 		
 		for(Cluster c : clusters)
 			System.out.println("Cluster " + c);
@@ -35,10 +41,10 @@ public class ClusterIndex extends HashSet<Term>{
 
 
 	private void buildCluster() {
-		calcDf_t();
-		for(Document doc : documents){
+		calcDf_t();	
+		calcClusterPostingList();
+		for(Document doc : documents)
 			assignToNearestClusterLeaders(doc);
-		}
 	}
 
 
@@ -46,12 +52,9 @@ public class ClusterIndex extends HashSet<Term>{
 		Set<Cluster> nearestClusters = new HashSet<Cluster>();
 
 		nearestClusters.addAll(cosineScore(doc, 1));
-		for(Cluster c : clusters){
-			if(nearestClusters.contains(c)){
-				//System.out.println("Nearest-Cluster for " + doc + ": " + c);
+		for(Cluster c : clusters)
+			if(nearestClusters.contains(c))
 				c.add(doc);				
-			}
-		}
 	}
 
 	/**
@@ -62,9 +65,7 @@ public class ClusterIndex extends HashSet<Term>{
 	 */
 	private float calcW_td(Term t, Document d){
 		float df_td = getDf_t(t);
-		//if(df_td > 0)
-			return (float) ((float) (1+ Math.log10(d.count(t))) * Math.log((float)documents.size()/df_td));
-	//	return (float) (1+ Math.log10(d.count(t)));
+		return (float) ((float) (1+ Math.log10(d.count(t))) * Math.log((float)documents.size()/df_td));
 	}
 	
 	private int getDf_t(Term t) {
@@ -89,14 +90,21 @@ public class ClusterIndex extends HashSet<Term>{
 	 * @param t
 	 * @return
 	 */
-	private List<Cluster> getClusterPostingList(Term t){
-		LinkedList<Cluster> postings = new LinkedList<Cluster>();
-		
-		for(Cluster c : clusters)
-			if(c.getClusterLeader().contains(t))
-				postings.add(c);
-		
-		return postings;
+	private void calcClusterPostingList(){
+		for(Term t: this){
+			HashSet<Cluster> postings = new HashSet<Cluster>();
+			
+			for(Cluster c : clusters)
+				if(c.getClusterLeader().contains(t))
+					postings.add(c);
+			
+			cluster_postings.put(t, postings);
+		}
+
+	}
+	
+	private Set<Cluster> getClusterPostingList(Term t){
+		return cluster_postings.get(t);
 	}
 
 
@@ -119,13 +127,8 @@ public class ClusterIndex extends HashSet<Term>{
 		}
 		
 		for(Cluster c : scores.keySet()){
-			//scores.put(c,((float) scores.get(c)/ c.getClusterLeader().length()));
 			if(scores.get(c) <= 0)
 				continue;
-			//float d = scores.get(c);
-			//float l =  c.getClusterLeader().length();
-			//float val = ((float) scores.get(c)/ c.getClusterLeader().length());
-			//System.out.println("d/l = " + d +"/" + l +"=" +val);
 			pq.add(new WeightedCluster(c, ((float) scores.get(c)/ c.getClusterLeader().length())));
 		}
 
@@ -139,7 +142,7 @@ public class ClusterIndex extends HashSet<Term>{
 	private Set<Integer> pickRandomClusterLeader(int size){
 		double sqrt_n = Math.sqrt(size);
 		HashSet<Integer> indices = new HashSet<Integer>();
-		Random rand = new Random(1); //Temporary seeded for bug finding
+		Random rand = new Random(); 
 		for(int i = 0; i < sqrt_n; i++){
 			boolean added = false;
 			do{
