@@ -12,17 +12,27 @@ import com.google.common.collect.Multiset;
  * @author lammbraten
  *
  */
-public class Document implements Iterable<Term>, Multiset<Term> {
+public class Document implements Iterable<Term>, Multiset<Term>, CosineAbleSet {
 	
 	private HashMultiset<Term> terms;
 	private String name;
 	private int length;
-
+	private float weight;
 
 	public Document(String name, int length) {
 		this.setName(name);
 		terms = HashMultiset.create();
 		this.length = length;
+	}
+
+	public Document(Document toCopy) {
+		this.setName(toCopy.getName());
+		terms = toCopy.getTerms();
+		this.length = toCopy.length;
+	}
+
+	private HashMultiset<Term> getTerms() {
+		return terms;
 	}
 
 	public String getName() {
@@ -129,6 +139,27 @@ public class Document implements Iterable<Term>, Multiset<Term> {
 
 	public boolean setCount(Term element, int oldCount, int newCount) {
 		return terms.setCount(element, oldCount, newCount);
+	}
+
+	public float getWeight() {
+		return weight;
+	}
+
+	public void setWeight(float weight) {
+		this.weight = weight;
+	}
+
+	public CosineAbleSet create(CosineAbleSet toCopy, float weight) {
+		CosineAbleSet weightedCopy = null;
+		if(toCopy instanceof Document){
+			weightedCopy = new Document((Document) toCopy);
+			weightedCopy.setWeight(weight);
+		}
+		return weightedCopy;
+	}
+
+	public Document getDocumentRepresantive() {
+		return this;
 	}
 
 

@@ -18,10 +18,14 @@ public class ClusterIndex extends HashSet<Term>{
 	private HashSet<Cluster> clusters;
 	private HashSet<Document> documents;
 	
+	int b1;	//number of clusters a document is assigned to.
+	int b2; //number of leader a query gets as answer.
 	
-	public ClusterIndex(File corpus) {
+	public ClusterIndex(File corpus, int b1, int b2) {
 		long startTime = System.currentTimeMillis();
 
+		this.b1 = b1;
+		this.b2 = b2;
 		this.clusters = new HashSet<Cluster>();
 		this.documents = new HashSet<Document>();
 		this.dft = new HashMap<Term, Integer>();
@@ -39,7 +43,6 @@ public class ClusterIndex extends HashSet<Term>{
 		
 	}
 
-
 	private void buildCluster() {
 		calcDf_t();	
 		calcClusterPostingList();
@@ -47,11 +50,10 @@ public class ClusterIndex extends HashSet<Term>{
 			assignToNearestClusterLeaders(doc);
 	}
 
-
 	private void assignToNearestClusterLeaders(Document doc) {
-		Set<Cluster> nearestClusters = new HashSet<Cluster>();
+		Set<CosineAbleSet> nearestClusters = new HashSet<CosineAbleSet>();
 
-		nearestClusters.addAll(cosineScore(doc, 1));
+		nearestClusters.addAll(cosineScore(doc, b1, new HashSet<CosineAbleSet>(clusters)));
 		for(Cluster c : clusters)
 			if(nearestClusters.contains(c))
 				c.add(doc);				
@@ -103,33 +105,55 @@ public class ClusterIndex extends HashSet<Term>{
 
 	}
 	
+
 	private Set<Cluster> getClusterPostingList(Term t){
 		return cluster_postings.get(t);
 	}
-
-
-	private List<Cluster> cosineScore(Document q, int k) {
-		HashMap<Cluster, Float> scores = new HashMap<Cluster, Float>();
-		LinkedList<Cluster> returnVal = new LinkedList<Cluster>();
-		PriorityQueue<WeightedCluster> pq = new PriorityQueue<WeightedCluster> (new WeightedClusterComparator());
+	
+	
+	private Set<CosineAbleSet> getPostingList(Term t, Set<CosineAbleSet> searchSpace){
+		if(isClusterSet(searchSpace))
+			return new HashSet<CosineAbleSet>(getClusterPostingList(t));
 		
-		for(Cluster c : clusters)
+		HashSet<CosineAbleSet> postings = new HashSet<CosineAbleSet>();
+		
+		for(CosineAbleSet c : searchSpace)
+			if(c.contains(t))
+				postings.add(c);
+				
+		return postings;
+	}
+
+
+	private boolean isClusterSet(Set<CosineAbleSet> searchSpace) {
+		for(CosineAbleSet s : searchSpace)
+			if(s instanceof Cluster)
+				return true;
+		return false;
+	}
+
+	private List<CosineAbleSet> cosineScore(Document q, int k, Set<CosineAbleSet> searchSpace) {
+		HashMap<CosineAbleSet, Float> scores = new HashMap<CosineAbleSet, Float>();
+		LinkedList<CosineAbleSet> returnVal = new LinkedList<CosineAbleSet>();
+		PriorityQueue<CosineAbleSet> pq = new PriorityQueue<CosineAbleSet> (new CosineAbleSetComparator());
+		
+		for(CosineAbleSet c : searchSpace)
 			scores.put(c, 0f);
 		
 		for(Term t : q){
 			float w_tq = calcW_td(t, q);
 			
-			for(Cluster d : getClusterPostingList(t)){
-				float w_td = calcW_td(t, d.getClusterLeader());
+			for(CosineAbleSet d : getPostingList(t, searchSpace)){
+				float w_td = calcW_td(t, d.getDocumentRepresantive());
 				float n_val = scores.get(d) + (w_tq * w_td);
 				scores.put(d, n_val);
 			}	
 		}
 		
-		for(Cluster c : scores.keySet()){
-			if(scores.get(c) <= 0)
+		for(CosineAbleSet d : scores.keySet()){
+			if(scores.get(d) <= 0)
 				continue;
-			pq.add(new WeightedCluster(c, ((float) scores.get(c)/ c.getClusterLeader().length())));
+			pq.add(d.create(d, ((float) scores.get(d)/ d.getDocumentRepresantive().length())));
 		}
 
 		for(int i = 0; i < k; i++)
@@ -137,6 +161,7 @@ public class ClusterIndex extends HashSet<Term>{
 		
 		return returnVal;
 	}
+
 
 
 	private Set<Integer> pickRandomClusterLeader(int size){
@@ -166,7 +191,7 @@ public class ClusterIndex extends HashSet<Term>{
 			}
 			if(doc != null){
 				addAll(doc);
-				if(clusterLeaderIndices.contains(i)) //new ClusterLeader
+				if(clusterLeaderIndices.contains(i)) 
 					clusters.add(new Cluster(doc));
 			}
 			i++;

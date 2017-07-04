@@ -18,7 +18,7 @@ public class ExpertMemory {
 	public ExpertMemory(String dirPath){
 		this.dirPath = dirPath;
 		handleFiles();
-		setIndex(new ClusterIndex(corpus));
+		setIndex(new ClusterIndex(corpus, 5, 10));
 	}
 	
 	public static void main(String[] args) {
