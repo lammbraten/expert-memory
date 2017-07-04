@@ -2,7 +2,7 @@ package de.hsnr.inr.expertMemory.cluster;
 
 import java.util.HashSet;
 
-public class Cluster extends HashSet<Document> implements CosineAbleSet {
+public class Cluster extends HashSet<CosineAbleSet> implements CosineAbleSet {
 
 	private static final long serialVersionUID = -3459735767407752393L;
 	private Document clusterLeader;

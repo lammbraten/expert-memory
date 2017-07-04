@@ -7,6 +7,5 @@ public interface CosineAbleSet  {
 	CosineAbleSet create(CosineAbleSet toCopy, float weight);
 	Document getDocumentRepresantive();
 	boolean contains(Object o);
-
 	
 }

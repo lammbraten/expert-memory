@@ -3,6 +3,7 @@ package de.hsnr.inr.expertMemory;
 import java.io.File;
 
 import de.hsnr.inr.expertMemory.cluster.ClusterIndex;
+import de.hsnr.inr.expertMemory.cluster.CosineAbleSet;
 
 public class ExpertMemory {
 	private static final String DIR_PATH_PAR = "-p";
@@ -19,6 +20,14 @@ public class ExpertMemory {
 		this.dirPath = dirPath;
 		handleFiles();
 		setIndex(new ClusterIndex(corpus, 5, 10));
+		ApproximativeSearch as = new ApproximativeSearch(index);
+		
+		while(true){
+			as.askForQuery();	
+			for(CosineAbleSet cs : as.search())
+				System.out.println(cs);
+		}
+
 	}
 	
 	public static void main(String[] args) {
@@ -31,6 +40,7 @@ public class ExpertMemory {
 
 		
 		ExpertMemory em = new ExpertMemory(dir_path);
+		
 
 	}
 	

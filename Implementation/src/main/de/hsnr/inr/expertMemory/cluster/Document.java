@@ -44,7 +44,7 @@ public class Document implements Iterable<Term>, Multiset<Term>, CosineAbleSet {
 	}
 	
 	public String toString(){
-		return getName() + ": " + size();
+		return getName() + "size: " + size() + ", weight: " + getWeight();
 	}
 	
 	public boolean equals(Object o){

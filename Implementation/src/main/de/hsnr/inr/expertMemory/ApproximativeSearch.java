@@ -3,6 +3,7 @@ package de.hsnr.inr.expertMemory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -10,7 +11,9 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
+import de.hsnr.inr.expertMemory.cluster.Cluster;
 import de.hsnr.inr.expertMemory.cluster.ClusterIndex;
+import de.hsnr.inr.expertMemory.cluster.CosineAbleSet;
 import de.hsnr.inr.expertMemory.cluster.Document;
 import de.hsnr.inr.expertMemory.cluster.Term;
 
@@ -31,7 +34,7 @@ public class ApproximativeSearch {
 		query = null;
 
 		do {
-			System.out.println("Was soll im Märchen vorkommen?");
+			System.out.println("Search-term for man-pages?");
 			try {
 				 setQuery(br.readLine());
 			} catch (IOException e) {
@@ -64,15 +67,23 @@ public class ApproximativeSearch {
 	}
 	
 	//Get top K - nearest neighbors
-	/*
-	public Set<Document> search(){
+	
+	public List<CosineAbleSet> search(){
 		return search(query);
 	}
 
-	private Set<Document> search(Document query) {
-		return index.cosineScore(query, 10);
+	private List<CosineAbleSet> search(Document query) {
+		Set<CosineAbleSet> setA = new HashSet<CosineAbleSet>();
+		List<CosineAbleSet> nearestCluster = index.cosineScore(query, 10, index.getClusters());
+
+		for(CosineAbleSet cluster : nearestCluster)
+			for(CosineAbleSet neighbor : (Cluster)cluster)
+				setA.add(neighbor);
+		
+		return index.cosineScore(query, 10, setA);
+
 	}
-	*/
+	
 	
 	
 

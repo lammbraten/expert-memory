@@ -14,8 +14,8 @@ public class ClusterIndex extends HashSet<Term>{
 	
 	private static final long serialVersionUID = -196938510438540540L;
 	private HashMap<Term, Integer> dft; 
-	private HashMap<Term, Set<Cluster>> cluster_postings; 
-	private HashSet<Cluster> clusters;
+	private HashMap<Term, Set<CosineAbleSet>> cluster_postings; 
+	private Set<CosineAbleSet> clusters;
 	private HashSet<Document> documents;
 	
 	int b1;	//number of clusters a document is assigned to.
@@ -26,10 +26,10 @@ public class ClusterIndex extends HashSet<Term>{
 
 		this.b1 = b1;
 		this.b2 = b2;
-		this.clusters = new HashSet<Cluster>();
+		this.clusters = new HashSet<CosineAbleSet>();
 		this.documents = new HashSet<Document>();
 		this.dft = new HashMap<Term, Integer>();
-		this.cluster_postings = new HashMap<Term, Set<Cluster>>();
+		this.cluster_postings = new HashMap<Term, Set<CosineAbleSet>>();
 		System.out.println("read corpus... " + (System.currentTimeMillis() - startTime));
 		readCorpus(corpus);
 		
@@ -38,7 +38,7 @@ public class ClusterIndex extends HashSet<Term>{
 		
 		System.out.println("cluster finished! " + (System.currentTimeMillis() - startTime));
 		
-		for(Cluster c : clusters)
+		for(CosineAbleSet c : clusters)
 			System.out.println("Cluster " + c);
 		
 	}
@@ -54,9 +54,9 @@ public class ClusterIndex extends HashSet<Term>{
 		Set<CosineAbleSet> nearestClusters = new HashSet<CosineAbleSet>();
 
 		nearestClusters.addAll(cosineScore(doc, b1, new HashSet<CosineAbleSet>(clusters)));
-		for(Cluster c : clusters)
+		for(CosineAbleSet c : clusters)
 			if(nearestClusters.contains(c))
-				c.add(doc);				
+				((Cluster)c).add(doc);				
 	}
 
 	/**
@@ -94,10 +94,10 @@ public class ClusterIndex extends HashSet<Term>{
 	 */
 	private void calcClusterPostingList(){
 		for(Term t: this){
-			HashSet<Cluster> postings = new HashSet<Cluster>();
+			HashSet<CosineAbleSet> postings = new HashSet<CosineAbleSet>();
 			
-			for(Cluster c : clusters)
-				if(c.getClusterLeader().contains(t))
+			for(CosineAbleSet c : clusters)
+				if(c.getDocumentRepresantive().contains(t))
 					postings.add(c);
 			
 			cluster_postings.put(t, postings);
@@ -106,14 +106,14 @@ public class ClusterIndex extends HashSet<Term>{
 	}
 	
 
-	private Set<Cluster> getClusterPostingList(Term t){
+	private Set<CosineAbleSet> getClusterPostingList(Term t){
 		return cluster_postings.get(t);
 	}
 	
 	
 	private Set<CosineAbleSet> getPostingList(Term t, Set<CosineAbleSet> searchSpace){
 		if(isClusterSet(searchSpace))
-			return new HashSet<CosineAbleSet>(getClusterPostingList(t));
+			return getClusterPostingList(t);
 		
 		HashSet<CosineAbleSet> postings = new HashSet<CosineAbleSet>();
 		
@@ -132,7 +132,7 @@ public class ClusterIndex extends HashSet<Term>{
 		return false;
 	}
 
-	private List<CosineAbleSet> cosineScore(Document q, int k, Set<CosineAbleSet> searchSpace) {
+	public List<CosineAbleSet> cosineScore(Document q, int k, Set<CosineAbleSet> searchSpace) {
 		HashMap<CosineAbleSet, Float> scores = new HashMap<CosineAbleSet, Float>();
 		LinkedList<CosineAbleSet> returnVal = new LinkedList<CosineAbleSet>();
 		PriorityQueue<CosineAbleSet> pq = new PriorityQueue<CosineAbleSet> (new CosineAbleSetComparator());
@@ -156,8 +156,11 @@ public class ClusterIndex extends HashSet<Term>{
 			pq.add(d.create(d, ((float) scores.get(d)/ d.getDocumentRepresantive().length())));
 		}
 
-		for(int i = 0; i < k; i++)
+		for(int i = 0; i < k; i++){
+			if(pq.peek()== null)
+				break;
 			returnVal.add(pq.poll());
+		}
 		
 		return returnVal;
 	}
@@ -213,6 +216,10 @@ public class ClusterIndex extends HashSet<Term>{
 		documents.add(doc);
 		
 		return doc;
+	}
+
+	public Set<CosineAbleSet> getClusters() {
+		return this.clusters;
 	}
 
 }
