@@ -23,6 +23,7 @@ public class ApproximativeSearch {
 	
 	private ClusterIndex index;
 	private Document query;
+	private int b2 = 2;
 	
 	public ApproximativeSearch(ClusterIndex index){
 		this.index = index;
@@ -36,13 +37,22 @@ public class ApproximativeSearch {
 		do {
 			System.out.println("Search-term for man-pages?");
 			try {
-				 setQuery(br.readLine());
+				String input = br.readLine();
+				if(input.startsWith("/set_b2:"))
+					setb2(input.substring(input.indexOf(':')+1));
+				else
+					setQuery(input);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		} while(query == null || query.isEmpty());
 	}
 	
+	private void setb2(String substring) {
+		this.b2 = Integer.parseInt(substring);
+		
+	}
+
 	public void setQuery(Document query) {
 		this.query = query;
 	}
@@ -74,7 +84,7 @@ public class ApproximativeSearch {
 
 	private List<CosineAbleSet> search(Document query) {
 		Set<CosineAbleSet> setA = new HashSet<CosineAbleSet>();
-		List<CosineAbleSet> nearestCluster = index.cosineScore(query, 10, index.getClusters());
+		List<CosineAbleSet> nearestCluster = index.cosineScore(query, b2, index.getClusters());
 
 		for(CosineAbleSet cluster : nearestCluster)
 			for(CosineAbleSet neighbor : (Cluster)cluster)

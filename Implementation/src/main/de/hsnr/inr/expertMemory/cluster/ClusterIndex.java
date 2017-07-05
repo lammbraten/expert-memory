@@ -17,15 +17,11 @@ public class ClusterIndex extends HashSet<Term>{
 	private HashMap<Term, Set<CosineAbleSet>> cluster_postings; 
 	private Set<CosineAbleSet> clusters;
 	private HashSet<Document> documents;
-	
-	int b1;	//number of clusters a document is assigned to.
-	int b2; //number of leader a query gets as answer.
-	
-	public ClusterIndex(File corpus, int b1, int b2) {
-		long startTime = System.currentTimeMillis();
+	int b1;
 
+	public ClusterIndex(File corpus, int b1) {
+		long startTime = System.currentTimeMillis();
 		this.b1 = b1;
-		this.b2 = b2;
 		this.clusters = new HashSet<CosineAbleSet>();
 		this.documents = new HashSet<Document>();
 		this.dft = new HashMap<Term, Integer>();

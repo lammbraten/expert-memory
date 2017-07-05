@@ -8,9 +8,11 @@ import de.hsnr.inr.expertMemory.cluster.CosineAbleSet;
 public class ExpertMemory {
 	private static final String DIR_PATH_PAR = "-p";
 	private static final String HELP_PAR = "-h";
+	private static final String B1 = "-b1";
 
 	private static boolean help = false;
 	private static String dir_path;
+	private static int b1 = 4;
 	
 	private String dirPath;
 	private File corpus;
@@ -19,7 +21,7 @@ public class ExpertMemory {
 	public ExpertMemory(String dirPath){
 		this.dirPath = dirPath;
 		handleFiles();
-		setIndex(new ClusterIndex(corpus, 5, 10));
+		setIndex(new ClusterIndex(corpus, 5));
 		ApproximativeSearch as = new ApproximativeSearch(index);
 		
 		while(true){
@@ -56,9 +58,19 @@ public class ExpertMemory {
 			return true;
 		if(isDPsetDP(key, value))
 			return true;
+		if(isB1setB1(key, value))
+			return true;
 		return false;
 	}
 	
+	private static boolean isB1setB1(String key, String value) {
+		if(key.equals(B1)){
+			b1 = Integer.parseInt(value);
+			return true;
+		}
+		return false;
+	}
+
 	private static boolean isHelpSetHelp(String key, String value) {
 		if(key.equals(HELP_PAR)){
 			help = true;
