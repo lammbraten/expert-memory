@@ -21,7 +21,7 @@ public class ExpertMemory {
 	public ExpertMemory(String dirPath){
 		this.dirPath = dirPath;
 		handleFiles();
-		setIndex(new ClusterIndex(corpus, 5));
+		setIndex(new ClusterIndex(corpus, b1));
 		ApproximativeSearch as = new ApproximativeSearch(index);
 		
 		while(true){
